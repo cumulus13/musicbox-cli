@@ -1,5 +1,9 @@
 # musicbox CLI
 
+[![Release](https://github.com/cumulus13/musicbox-cli/actions/workflows/release.yml/badge.svg)](https://github.com/cumulus13/musicbox-cli/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+
 Standard-library Go client for MusicBox. Needs Go 1.21+ to build and, for playing, `mpv` (recommended) or `ffplay`.
 
 Or download a prebuilt binary from the [Releases](https://github.com/cumulus13/musicbox-cli/releases) page (Linux, macOS, Windows)
