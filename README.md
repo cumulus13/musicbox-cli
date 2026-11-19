@@ -6,7 +6,7 @@ Or download a prebuilt binary from the [Releases](https://github.com/cumulus13/m
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/licface15/images/main/musicbox/demo.gif?raw=true" width="98%" alt="Demo">
+  <img src="https://raw.githubusercontent.com/licface15/images/refs/heads/main/musicbox/demo_cli.gif" width="98%" alt="Demo">
 </p>
 
 
@@ -60,3 +60,18 @@ Supported on Linux, macOS and WSL (Unix socket to mpv). Native Windows uses a na
 The choice is saved with the login, so `search`, `play`, `tui`... use it automatically; `MUSICBOX_INSECURE=1` forces it for a single run. `-insecure` also disables certificate checks in mpv/ffplay (`--tls-verify=no` / `-tls_verify 0`). Never use it over the internet: it allows anyone on the path to read the token and the stream.
 If the server answers `http://` with a redirect to `https://`, the CLI stops with a message telling you to use the https URL (a redirect would otherwise drop the login request).
 A server URL without a scheme is treated as `https://`.
+
+## LICENSE
+
+[MIT](LICENSE)
+
+## 👤 Author
+        
+[Hadi Cahyadi](mailto:cumulus13@gmail.com)
+    
+
+[![Buy Me a Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/cumulus13)
+
+[![Donate via Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/cumulus13)
+ 
+[Support me on Patreon](https://www.patreon.com/cumulus13)
