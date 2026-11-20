@@ -454,7 +454,7 @@ func cmdMpd(c *client, args []string) error {
 		}
 	case "play", "pause", "stop", "next", "prev":
 		return c.do("POST", "/api/v1/player/command", map[string]any{"cmd": args[0]}, nil)
-	case "volume", "seek", "shuffle", "repeat":
+	case "volume", "seek", "shuffle", "random", "repeat", "single", "consume":
 		if len(args) < 2 {
 			return fmt.Errorf("usage: musicbox mpd %s VALUE", args[0])
 		}

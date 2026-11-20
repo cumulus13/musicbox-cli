@@ -41,12 +41,14 @@ Needs `mpv` in PATH (the TUI controls it over its JSON IPC). Views: **1 Browse**
 | `/` | search (Enter runs it; results: artists, albums, tracks) |
 | `↑ ↓ PgUp PgDn Home End` (or `j k`) | move |
 | `Enter` | play the selected item (a track plays the listed tracks from there) |
-| `a` | add the selected track to the queue |
+| `a` | add the selected track, artist, album or mix to the queue (starts playing if nothing is) |
 | `space` · `n` · `p` | pause/resume · next · previous |
 | `← →` | seek -10 s / +10 s |
 | `+` `-` | volume |
 | `1` `2` `3` / `Tab` | switch view |
-| Queue view: `Enter` / `d` / `c` | play / remove / clear |
+| `r` | cycle repeat: off → all → one (shown in the bar) |
+| `b` | restart the current track |
+| Queue view: `Enter` / `d` `x` `Del` / `c` | play / remove the selected song / clear |
 | `Backspace` (Browse) | back to the menu |
 | `q` / `Ctrl-C` | quit (stops mpv) |
 

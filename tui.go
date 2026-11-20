@@ -158,6 +158,7 @@ type ui struct {
 	pos     float64
 	dur     float64
 	paused  bool
+	repeat  int // 0 off, 1 all, 2 one
 	volume  float64
 	lyrics  lyricsData
 	lscroll int
@@ -290,6 +291,8 @@ func parseKeys(b []byte) []string {
 					keys = append(keys, "home")
 				case "4", "8":
 					keys = append(keys, "end")
+				case "3":
+					keys = append(keys, "delete")
 				}
 			}
 		case c == 0x1b:
@@ -368,6 +371,10 @@ func (u *ui) onKey(k string) bool {
 		u.m.send("playlist-next")
 	case "p":
 		u.m.send("playlist-prev")
+	case "r":
+		u.cycleRepeat()
+	case "b":
+		u.m.send("seek", 0, "absolute") // restart the current track
 	case "left":
 		u.m.send("seek", -10, "relative")
 	case "right":
@@ -416,9 +423,7 @@ func (u *ui) onListKey(k string) {
 		case "enter":
 			u.activate()
 		case "a":
-			if u.sel < len(u.items) && u.items[u.sel].kind == "track" {
-				u.enqueue(u.items[u.sel].t)
-			}
+			u.addSelected()
 		case "backspace":
 			u.items, u.sel = menuItems(), 0
 		}
@@ -429,7 +434,7 @@ func (u *ui) onListKey(k string) {
 			if u.qsel < len(u.queue) {
 				u.m.send("playlist-play-index", u.qsel)
 			}
-		case "d":
+		case "d", "x", "delete":
 			u.removeQueued(u.qsel)
 		case "c":
 			u.queue, u.cur, u.qsel = nil, -1, 0
@@ -517,21 +522,78 @@ func (u *ui) playList(list []track, start int) {
 }
 
 func (u *ui) enqueue(t track) {
-	u.queue = append(u.queue, t)
-	u.m.send("loadfile", u.c.cfg.Server+t.URL, "append-play")
+	u.enqueueMany([]track{t})
 	u.status = "Added: " + t.Title
+}
+
+// enqueueMany appends tracks to the queue; the first one starts playback if nothing is playing.
+func (u *ui) enqueueMany(list []track) {
+	for i, t := range list {
+		mode := "append"
+		if i == 0 {
+			mode = "append-play"
+		}
+		u.queue = append(u.queue, t)
+		u.m.send("loadfile", u.c.cfg.Server+t.URL, mode)
+	}
+}
+
+// addSelected appends the selected track, or every track of the selected artist, album or mix.
+func (u *ui) addSelected() {
+	if u.sel < 0 || u.sel >= len(u.items) {
+		return
+	}
+	it := u.items[u.sel]
+	switch it.kind {
+	case "track":
+		u.enqueue(it.t)
+	case "mix", "artist", "album":
+		u.status = "Adding ..."
+		go u.fetchAndAdd(it.target)
+	}
+}
+
+func (u *ui) fetchAndAdd(target string) {
+	list, err := resolve(u.c, target)
+	u.post(func(u *ui) {
+		switch {
+		case err != nil:
+			u.status = "error: " + err.Error()
+		case len(list) == 0:
+			u.status = "nothing to add"
+		default:
+			u.enqueueMany(list)
+			u.status = fmt.Sprintf("Added %d tracks to the queue", len(list))
+		}
+	})
+}
+
+func (u *ui) cycleRepeat() {
+	u.repeat = (u.repeat + 1) % 3
+	file, list := "no", "no"
+	switch u.repeat {
+	case 1:
+		list = "inf"
+	case 2:
+		file = "inf"
+	}
+	u.m.send("set_property", "loop-file", file)
+	u.m.send("set_property", "loop-playlist", list)
+	u.status = "Repeat: " + []string{"off", "all", "one"}[u.repeat]
 }
 
 func (u *ui) removeQueued(i int) {
 	if i < 0 || i >= len(u.queue) {
 		return
 	}
+	title := u.queue[i].Title
 	u.m.send("playlist-remove", i)
 	u.queue = append(u.queue[:i], u.queue[i+1:]...)
 	if i < u.cur {
 		u.cur--
 	}
 	u.qsel = clamp(u.qsel, 0, len(u.queue)-1)
+	u.status = "Removed: " + title
 }
 
 func (u *ui) search(q string) {
@@ -847,7 +909,7 @@ func (u *ui) nowLine(w int) string {
 }
 
 func (u *ui) barLine(w int) string {
-	right := fmt.Sprintf(" %s / %s  vol %d%%", fmtDur(u.pos), fmtDur(u.dur), int(u.volume))
+	right := fmt.Sprintf(" %s / %s  vol %d%%%s", fmtDur(u.pos), fmtDur(u.dur), int(u.volume), []string{"", "  repeat: all", "  repeat: one"}[u.repeat])
 	barw := w - utf8.RuneCountInString(right) - 2
 	if barw < 5 {
 		barw = 5
@@ -866,5 +928,12 @@ func (u *ui) helpLine(w int) string {
 	if u.status != "" {
 		return " " + trunc(u.status, w-2)
 	}
-	return dim + " " + trunc("space pause · n/p next/prev · ←/→ seek · +/- volume · / search · a add · tab views · q quit", w-2) + reset
+	keys := "/ search · Enter play · a add (track/artist/album) · r repeat · b restart · space pause · n/p · ←/→ seek · +/- vol · tab view · q quit"
+	switch u.view {
+	case viewQueue:
+		keys = "Enter play · d/x/Del remove · c clear · r repeat · b restart · space pause · n/p · ←/→ seek · +/- vol · tab view · q quit"
+	case viewLyrics:
+		keys = "↑/↓ scroll · r repeat · b restart · space pause · n/p · ←/→ seek · +/- vol · tab view · q quit"
+	}
+	return dim + " " + trunc(keys, w-2) + reset
 }
